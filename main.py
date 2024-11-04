@@ -3,16 +3,23 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher import FSMContext
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import asyncio
 
 api = ""
 bot = Bot(token=api)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
-kb = ReplyKeyboardMarkup(resize_keyboard=True)
+kb_bottom = ReplyKeyboardMarkup(resize_keyboard=True)
 callori = KeyboardButton(text="Рассчитать")
 info = KeyboardButton(text="Информация")
-kb.row(callori, info)
+kb_bottom.row(callori, info)
+
+kb_top = InlineKeyboardMarkup()
+rass = InlineKeyboardButton(text='Рассчитать норму калорий', callback_data='callories')
+form = InlineKeyboardButton(text='Формулы расчёта', callback_data='formulas')
+kb_top.add(rass)
+kb_top.add(form)
 
 class UserState(StatesGroup):
     age = State()
@@ -21,14 +28,25 @@ class UserState(StatesGroup):
 
 @dp.message_handler(commands=["start"])
 async def start_message(message):
-    await message.answer('Привет! Я бот помогающий твоему здоровью.', reply_markup=kb)
+    await message.answer('Привет! Я бот помогающий твоему здоровью.', reply_markup=kb_bottom)
 
 
-@dp.message_handler(text=["Рассчитать"])
-async def set_age(message):
-    await message.answer('Введите свой возраст:')
+@dp.message_handler(text='Рассчитать')
+async def main_menu(message):
+    await message.answer('Выберите опцию:', reply_markup=kb_top)
     await UserState.age.set()
 
+
+@dp.callback_query_handler(text='formulas')
+async def cillback_query_handler(call):
+    await call.message.answer('10 x вес (кг) + 6,25 x рост (см) – 5 x возраст (г) – 161')
+    await call.answer()
+
+@dp.callback_query_handler(text="callories")
+async def set_age(call):
+    await call.message.answer('Введите свой возраст:')
+    await call.answer()
+    await UserState.age.set()
 
 @dp.message_handler(state=UserState.age)
 async def set_growth(message, state):
@@ -55,8 +73,7 @@ async def send_calories(message, state):
 
 @dp.message_handler()
 async def all_message(message):
-    await message.answer('Введите /start, чтобы начать общение. \n'
-                         'Введите "Calories", чтобы посчитать количество калорий для вас')
+    await message.answer('Введите /start, чтобы начать общение.')
 
 if __name__ == "__main__":
     executor.start_polling(dp, skip_updates= True)
