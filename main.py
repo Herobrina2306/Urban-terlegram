@@ -5,10 +5,12 @@ from aiogram.dispatcher import FSMContext
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import asyncio
+import crud_functions as cf
 
 api = ""
 bot = Bot(token=api)
 dp = Dispatcher(bot, storage=MemoryStorage())
+
 
 kb_bottom = ReplyKeyboardMarkup(resize_keyboard=True)
 callori = KeyboardButton(text="Рассчитать")
@@ -44,9 +46,10 @@ async def start_message(message):
 
 @dp.message_handler(text="Купить")
 async def get_buying_list(message):
-    for i in range(1, 5):
-        with open(f'{i}.png', 'rb') as img:
-            await message.answer_photo(img, f'Название: Product{i}/ Описание: описание{i}/ Цена: {i * 100}')
+    products = cf.pro
+    for i in products:
+        with open(f'{i[0]}.png', 'rb') as img:
+            await message.answer_photo(img, f'Название: {i[1]}/ Описание: {i[2]}/ Цена: {i[3]}')
     await message.answer('Выберете продукт для покупки: ', reply_markup=kb_top2)
 
 
