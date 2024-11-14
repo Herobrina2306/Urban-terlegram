@@ -6,20 +6,31 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import asyncio
 
-api = ""
+api = "7646913988:AAEBjvqKjCNw_ocdl3uAe7QnsSr3KiAOwB4"
 bot = Bot(token=api)
 dp = Dispatcher(bot, storage=MemoryStorage())
 
 kb_bottom = ReplyKeyboardMarkup(resize_keyboard=True)
 callori = KeyboardButton(text="Рассчитать")
 info = KeyboardButton(text="Информация")
-kb_bottom.row(callori, info)
+shop = KeyboardButton(text="Купить")
+kb_bottom.row(callori, info, shop)
 
-kb_top = InlineKeyboardMarkup()
+kb_top1 = InlineKeyboardMarkup()
 rass = InlineKeyboardButton(text='Рассчитать норму калорий', callback_data='callories')
 form = InlineKeyboardButton(text='Формулы расчёта', callback_data='formulas')
-kb_top.add(rass)
-kb_top.add(form)
+kb_top1.add(rass)
+kb_top1.add(form)
+
+kb_top2 = InlineKeyboardMarkup(resize_keybord=True)
+prod1 = InlineKeyboardButton('Продукт1', callback_data='product_buying')
+prod2 = InlineKeyboardButton('Продукт2', callback_data='product_buying')
+prod3 = InlineKeyboardButton('Продукт3', callback_data='product_buying')
+prod4 = InlineKeyboardButton('Продукт4', callback_data='product_buying')
+kb_top2.add(prod1)
+kb_top2.add(prod2)
+kb_top2.add(prod3)
+kb_top2.add(prod4)
 
 class UserState(StatesGroup):
     age = State()
@@ -31,11 +42,23 @@ async def start_message(message):
     await message.answer('Привет! Я бот помогающий твоему здоровью.', reply_markup=kb_bottom)
 
 
+@dp.message_handler(text="Купить")
+async def get_buying_list(message):
+    for i in range(1, 5):
+        with open(f'{i}.png', 'rb') as img:
+            await message.answer_photo(img, f'Название: Product{i}/ Описание: описание{i}/ Цена: {i * 100}')
+    await message.answer('Выберете продукт для покупки: ', reply_markup=kb_top2)
+
+
 @dp.message_handler(text='Рассчитать')
 async def main_menu(message):
-    await message.answer('Выберите опцию:', reply_markup=kb_top)
+    await message.answer('Выберите опцию:', reply_markup=kb_top1)
     await UserState.age.set()
 
+@dp.callback_query_handler(text='product_buying')
+async def send_confirm_message(call):
+    await call.message.answer("Вы успешно приобрели продукт!")
+    await call.answer()
 
 @dp.callback_query_handler(text='formulas')
 async def cillback_query_handler(call):
