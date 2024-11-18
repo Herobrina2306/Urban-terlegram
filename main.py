@@ -16,7 +16,8 @@ kb_bottom = ReplyKeyboardMarkup(resize_keyboard=True)
 callori = KeyboardButton(text="Рассчитать")
 info = KeyboardButton(text="Информация")
 shop = KeyboardButton(text="Купить")
-kb_bottom.row(callori, info, shop)
+reg = KeyboardButton(text="Регистрация")
+kb_bottom.row(callori, info, shop, reg)
 
 kb_top1 = InlineKeyboardMarkup()
 rass = InlineKeyboardButton(text='Рассчитать норму калорий', callback_data='callories')
@@ -34,14 +35,54 @@ kb_top2.add(prod2)
 kb_top2.add(prod3)
 kb_top2.add(prod4)
 
+class RegistrationState(StatesGroup):
+    username = State()
+    email = State()
+    age = State()
+    balance = State()
+
 class UserState(StatesGroup):
     age = State()
     growth = State()
     weight = State()
 
+
+@dp.message_handler(text='Регистрация')
+async def sing_up(message):
+    await message.answer("Введите имя пользователя (только латинский алфавит):")
+    await RegistrationState.username.set()
+
+
 @dp.message_handler(commands=["start"])
 async def start_message(message):
     await message.answer('Привет! Я бот помогающий твоему здоровью.', reply_markup=kb_bottom)
+
+
+
+@dp.message_handler(state=RegistrationState.username)
+async def set_username(message, state):
+    if cf.is_included(message.text):
+        await state.update_data(username=message.text)
+        await message.answer("Введите свой email:")
+        await RegistrationState.email.set()
+    else:
+        await message.answer("Пользователь существует, введите другое имя")
+        await RegistrationState.username.set()
+
+
+@dp.message_handler(state=RegistrationState.email)
+async def set_email(message, state):
+    await state.update_data(email=message.text)
+    await message.answer('Введите свой возраст:')
+    await RegistrationState.age.set()
+
+@dp.message_handler(state=RegistrationState.age)
+async def set_age(message, state):
+    await state.update_data(age=message.text)
+    data = await state.get_data()
+    cf.add_user(data['username'], data['email'], data['age'])
+    await message.answer('Регистрация прошла успешно')
+    await state.finish()
 
 
 @dp.message_handler(text="Купить")
@@ -56,7 +97,7 @@ async def get_buying_list(message):
 @dp.message_handler(text='Рассчитать')
 async def main_menu(message):
     await message.answer('Выберите опцию:', reply_markup=kb_top1)
-    await UserState.age.set()
+
 
 @dp.callback_query_handler(text='product_buying')
 async def send_confirm_message(call):
